@@ -215,7 +215,7 @@
 
   /** 按横向间距分配上下方与层级，避免密集月份标签重叠 */
   function layoutTimelineMarkers(sorted, totalDays) {
-    const MIN_GAP = 5.8;
+    const MIN_GAP = 6.2;
     const items = sorted.map((m) => ({
       m,
       pct: ((dayOfYear(m.solarThisYear.date) - 1) / totalDays) * 100,
@@ -319,12 +319,57 @@
         return `
           <div class="timeline-marker timeline-marker--${side} timeline-marker--tier-${tier}${highlight}"
                style="left:${pct}%"
-               title="${m.name} · ${formatSolarDate(m.solarThisYear)}">
+               role="button"
+               tabindex="0"
+               aria-label="${m.name}，${formatSolarDate(m.solarThisYear)}">
             ${body}
           </div>
         `;
       })
       .join("");
+
+    bindTimelineInteractions(markersEl);
+  }
+
+  function bindTimelineInteractions(markersEl) {
+    const markers = [...markersEl.querySelectorAll(".timeline-marker")];
+
+    function clearActive() {
+      markers.forEach((m) => m.classList.remove("is-active"));
+      markersEl.classList.remove("has-active");
+    }
+
+    markers.forEach((marker) => {
+      const activate = (e) => {
+        if (e) e.stopPropagation();
+        const wasActive = marker.classList.contains("is-active");
+        clearActive();
+        if (!wasActive) {
+          marker.classList.add("is-active");
+          markersEl.classList.add("has-active");
+        }
+      };
+
+      marker.addEventListener("click", activate);
+      marker.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          activate(e);
+        }
+        if (e.key === "Escape") {
+          clearActive();
+          marker.blur();
+        }
+      });
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!markersEl.contains(e.target)) clearActive();
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") clearActive();
+    });
   }
 
   function requestNotificationPermission() {
