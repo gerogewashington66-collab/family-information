@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>刘家 · 生日温馨站</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg-glow bg-glow--1" aria-hidden="true"></div>
+  <div class="bg-glow bg-glow--2" aria-hidden="true"></div>
+
+  <header class="hero">
+    <p class="hero__tag">刘家 · 血脉相连</p>
+    <h1 class="hero__title">生日温馨站</h1>
+    <p class="hero__date" id="todayDisplay"></p>
+  </header>
+
+  <section class="alert-zone" id="alertZone" hidden>
+    <div class="alert-card" id="alertCard"></div>
+  </section>
+
+  <section class="upcoming" id="upcomingSection">
+    <h2 class="section-title">近期生日</h2>
+    <div class="upcoming__list" id="upcomingList"></div>
+  </section>
+
+  <main class="generations" id="generationsRoot"></main>
+
+  <section class="timeline-section">
+    <h2 class="section-title">一年生日时光轴</h2>
+    <p class="timeline-hint">农历生日换算为本年公历，从左至右为一年中的先后顺序</p>
+    <div class="timeline-wrap">
+      <div class="timeline-axis" id="timelineAxis">
+        <div class="timeline-line"></div>
+        <div class="timeline-today" id="timelineToday" hidden>
+          <span class="timeline-today__label">今天</span>
+        </div>
+        <div class="timeline-markers" id="timelineMarkers"></div>
+      </div>
+      <div class="timeline-months" id="timelineMonths"></div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <p>愿每一位家人的生日，都被温柔记得 · 农历生日自动换算</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/lunar-javascript@1.6.12/lunar.min.js"></script>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
