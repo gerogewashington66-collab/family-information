@@ -213,6 +213,64 @@
     `;
   }
 
+  /** 按横向间距分配上下方与层级，避免密集月份标签重叠 */
+  function layoutTimelineMarkers(sorted, totalDays) {
+    const MIN_GAP = 5.8;
+    const items = sorted.map((m) => ({
+      m,
+      pct: ((dayOfYear(m.solarThisYear.date) - 1) / totalDays) * 100,
+      side: "below",
+      tier: 1,
+    }));
+    items.sort((a, b) => a.pct - b.pct);
+
+    const laneEnds = {};
+
+    function laneKey(side, tier) {
+      return `${side}-${tier}`;
+    }
+
+    function canPlace(side, tier, pct) {
+      const last = laneEnds[laneKey(side, tier)];
+      return last === undefined || pct - last >= MIN_GAP;
+    }
+
+    function occupy(side, tier, pct) {
+      laneEnds[laneKey(side, tier)] = pct;
+    }
+
+    const tryOrder = [
+      ["below", 1],
+      ["above", 1],
+      ["below", 2],
+      ["above", 2],
+      ["below", 3],
+      ["above", 3],
+    ];
+
+    for (const item of items) {
+      let placed = false;
+      for (const [side, tier] of tryOrder) {
+        if (canPlace(side, tier, item.pct)) {
+          item.side = side;
+          item.tier = tier;
+          occupy(side, tier, item.pct);
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) {
+        const belowLast = laneEnds[laneKey("below", 1)] ?? -Infinity;
+        const aboveLast = laneEnds[laneKey("above", 1)] ?? -Infinity;
+        item.side = item.pct - belowLast >= item.pct - aboveLast ? "below" : "above";
+        item.tier = 3;
+        occupy(item.side, item.tier, item.pct);
+      }
+    }
+
+    return items;
+  }
+
   function renderTimeline(members, year) {
     const withSolar = members.filter((m) => m.solarThisYear);
     const sorted = [...withSolar].sort(
@@ -223,6 +281,7 @@
     const markersEl = document.getElementById("timelineMarkers");
     const monthsEl = document.getElementById("timelineMonths");
     const todayEl = document.getElementById("timelineToday");
+    const axisEl = document.getElementById("timelineAxis");
 
     const monthLabels = [];
     for (let m = 1; m <= 12; m++) {
@@ -238,18 +297,30 @@
       todayEl.style.left = `${todayPct}%`;
     }
 
-    markersEl.innerHTML = sorted
-      .map((m, i) => {
-        const doy = dayOfYear(m.solarThisYear.date);
-        const pct = ((doy - 1) / totalDays) * 100;
-        const alt = i % 2 === 0 ? "above" : "below";
+    const laidOut = layoutTimelineMarkers(sorted, totalDays);
+    const maxTier = laidOut.reduce((max, it) => Math.max(max, it.tier), 1);
+    axisEl.classList.toggle("timeline-axis--tall", maxTier >= 2);
+    axisEl.classList.toggle("timeline-axis--extra-tall", maxTier >= 3);
+
+    markersEl.innerHTML = laidOut
+      .map(({ m, pct, side, tier }) => {
         const highlight = m.isToday ? " timeline-marker--today" : "";
-        return `
-          <div class="timeline-marker timeline-marker--${alt}${highlight}" style="left:${pct}%" title="${m.name} · ${formatSolarDate(m.solarThisYear)}">
-            <span class="timeline-marker__dot"></span>
-            <span class="timeline-marker__line"></span>
+        const dateStr = `${m.solarThisYear.month}/${m.solarThisYear.day}`;
+        const labelBlock = `
+          <div class="timeline-marker__label">
+            <span class="timeline-marker__date">${dateStr}</span>
             <span class="timeline-marker__name">${m.name}</span>
-            <span class="timeline-marker__date">${m.solarThisYear.month}/${m.solarThisYear.day}</span>
+          </div>
+        `;
+        const body =
+          side === "above"
+            ? `${labelBlock}<span class="timeline-marker__line"></span><span class="timeline-marker__dot"></span>`
+            : `<span class="timeline-marker__dot"></span><span class="timeline-marker__line"></span>${labelBlock}`;
+        return `
+          <div class="timeline-marker timeline-marker--${side} timeline-marker--tier-${tier}${highlight}"
+               style="left:${pct}%"
+               title="${m.name} · ${formatSolarDate(m.solarThisYear)}">
+            ${body}
           </div>
         `;
       })
